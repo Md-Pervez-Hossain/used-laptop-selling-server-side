@@ -18,6 +18,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const productsCollection = client.db("usedLaptop").collection("laptop");
+    const buyerBookingCollection = client
+      .db("usedLaptop")
+      .collection("buyerBooking");
     //add products api
     app.post("/addproducts", async (req, res) => {
       const products = req.body;
@@ -41,6 +44,12 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const result = await productsCollection.findOne(query);
       res.send(result);
+    });
+
+    app.post("/buyerBooking", async (req, res) => {
+      const buyerBooking = req.body;
+      const booking = await buyerBookingCollection.insertOne(buyerBooking);
+      res.send(booking);
     });
 
     console.log("database Connected");
