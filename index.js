@@ -22,6 +22,24 @@ async function run() {
       .db("usedLaptop")
       .collection("buyerBooking");
     const usersCollection = client.db("usedLaptop").collection("users");
+    const advertisementCollection = client
+      .db("usedLaptop")
+      .collection("advertisement");
+
+    //advertisement
+    app.post("/advertisement", async (req, res) => {
+      const advertisement = req.body;
+      const advertisementProduct = await advertisementCollection.insertOne(
+        advertisement
+      );
+      res.send(advertisementProduct);
+    });
+    //show advertisement on ui
+    app.get("/advertisement", async (req, res) => {
+      const query = {};
+      const result = await advertisementCollection.find(query).toArray();
+      res.send(result);
+    });
     //add products api
     app.post("/addproducts", async (req, res) => {
       const products = req.body;
