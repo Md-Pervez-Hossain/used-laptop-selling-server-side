@@ -35,8 +35,9 @@ async function run() {
       res.send(advertisementProduct);
     });
     //show advertisement on ui
-    app.get("/advertisement", async (req, res) => {
-      const query = {};
+    app.get("/advertisement/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
       const result = await advertisementCollection.find(query).toArray();
       res.send(result);
     });
