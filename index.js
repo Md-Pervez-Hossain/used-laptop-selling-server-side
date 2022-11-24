@@ -44,6 +44,23 @@ async function run() {
       );
       res.send(result);
     });
+    //after order cancle change product booked status
+    app.put("/productupdate/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedProduct = {
+        $set: {
+          booked: false,
+        },
+      };
+      const result = await productsCollection.updateOne(
+        filter,
+        updatedProduct,
+        options
+      );
+      res.send(result);
+    });
 
     app.get("/addproducts", async (req, res) => {
       const query = {};
@@ -52,7 +69,7 @@ async function run() {
     });
     app.get("/addproducts/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { productId: id };
+      const query = { categoryProduct: id };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
     });
@@ -62,7 +79,26 @@ async function run() {
       const result = await productsCollection.findOne(query);
       res.send(result);
     });
+    //seller own product
+    app.get("/myproduct/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const myProduct = await productsCollection.find(query).toArray();
+      res.send(myProduct);
+    });
+    // seller product delete
+    app.delete("/deleteMyProduct/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const deleteMyProduct = await productsCollection.deleteOne(query);
+      res.send(deleteMyProduct);
+    });
     //users api
+    app.get("/users", async (req, res) => {
+      const query = {};
+      const user = await usersCollection.find(query).toArray();
+      res.send(user);
+    });
     app.post("/users", async (req, res) => {
       const users = req.body;
       const result = await usersCollection.insertOne(users);
@@ -73,6 +109,19 @@ async function run() {
       const buyerBooking = req.body;
       const booking = await buyerBookingCollection.insertOne(buyerBooking);
       res.send(booking);
+    });
+    app.get("/buyerBooking/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const myBooking = await buyerBookingCollection.find(query).toArray();
+      res.send(myBooking);
+    });
+    //delete booking
+    app.delete("/mybooking/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const deleteMybooking = await buyerBookingCollection.deleteOne(query);
+      res.send(deleteMybooking);
     });
 
     console.log("database Connected");
