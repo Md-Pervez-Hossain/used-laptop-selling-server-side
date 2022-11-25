@@ -3,6 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const cors = require("cors");
 const port = process.env.PORT || 5000;
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 app.use(cors());
 app.use(express.json());
@@ -15,6 +16,23 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send("unAuthorised");
+  }
+  const token = authHeader.split(" ")[1];
+  console.log(token);
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+    if (err) {
+      return res.status(401).send("unAuthorised");
+    }
+    req.decoded = decoded;
+    next();
+  });
+  console.log("inside verify token", req.headers.authorization);
+}
+
 async function run() {
   try {
     const productsCollection = client.db("usedLaptop").collection("laptop");
@@ -26,6 +44,21 @@ async function run() {
       .db("usedLaptop")
       .collection("advertisement");
     const wishListCollection = client.db("usedLaptop").collection("wishlist");
+
+    // jwt token
+
+    app.get("/jwt", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user) {
+        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
+          expiresIn: "10h",
+        });
+        return res.send({ accessToken: token });
+      }
+      res.status(401).send("unAuthorised");
+    });
 
     //wishlist
     app.post("/wishlist", async (req, res) => {
@@ -66,9 +99,8 @@ async function run() {
       res.send(advertisementProduct);
     });
     //show advertisement on ui
-    app.get("/advertisement/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { email: email };
+    app.get("/advertisement", async (req, res) => {
+      const query = {};
       const result = await advertisementCollection.find(query).toArray();
       res.send(result);
     });
@@ -183,8 +215,13 @@ async function run() {
       const booking = await buyerBookingCollection.insertOne(buyerBooking);
       res.send(booking);
     });
-    app.get("/buyerBooking/:email", async (req, res) => {
+    app.get("/buyerBooking/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
+      console.log(email);
+      const decodedEmail = req.decoded.email;
+      if (decodedEmail !== email) {
+        return res.status(403).send("Forbidden");
+      }
       const query = { email: email };
       const myBooking = await buyerBookingCollection.find(query).toArray();
       res.send(myBooking);
