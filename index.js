@@ -26,6 +26,23 @@ async function run() {
       .db("usedLaptop")
       .collection("advertisement");
 
+    //getBuyer and seller
+    app.get("/mybuyers/:role", async (req, res) => {
+      const role = req.params.role;
+      console.log(role);
+      const query = { role: role };
+      const buyer = await usersCollection.find(query).toArray();
+      res.send(buyer);
+    });
+
+    //delete buyer and seller
+    app.delete("/deleteBuyers/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const removeBuyers = await usersCollection.deleteOne(query);
+      res.send(removeBuyers);
+    });
+
     //advertisement
     app.post("/advertisement", async (req, res) => {
       const advertisement = req.body;
@@ -65,7 +82,6 @@ async function run() {
     });
     //after order cancle change product booked status
     app.put("/productupdate/:id", async (req, res) => {
-      const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
       const updatedProduct = {
@@ -113,8 +129,9 @@ async function run() {
       res.send(deleteMyProduct);
     });
     //users api
-    app.get("/users", async (req, res) => {
-      const query = {};
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
       const user = await usersCollection.find(query).toArray();
       res.send(user);
     });
