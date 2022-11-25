@@ -25,6 +25,20 @@ async function run() {
     const advertisementCollection = client
       .db("usedLaptop")
       .collection("advertisement");
+    const wishListCollection = client.db("usedLaptop").collection("wishlist");
+
+    //wishlist
+    app.post("/wishlist", async (req, res) => {
+      const wishlist = req.body;
+      const result = await wishListCollection.insertOne(wishlist);
+      res.send(result);
+    });
+    app.get("/wishlist/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await wishListCollection.find(query).toArray();
+      res.send(result);
+    });
 
     //getBuyer and seller
     app.get("/mybuyers/:role", async (req, res) => {
@@ -135,10 +149,33 @@ async function run() {
       const user = await usersCollection.find(query).toArray();
       res.send(user);
     });
+    app.get("/users/:status", async (req, res) => {
+      const status = req.params.status;
+      const query = { status: status };
+      const user = await usersCollection.find(query).toArray();
+      res.send(user);
+    });
     app.post("/users", async (req, res) => {
       const users = req.body;
       const result = await usersCollection.insertOne(users);
       res.send(result);
+    });
+
+    app.put("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateVerify = {
+        $set: {
+          status: "verified",
+        },
+      };
+      const verify = await usersCollection.updateOne(
+        filter,
+        updateVerify,
+        options
+      );
+      res.send(verify);
     });
     //booking api
     app.post("/buyerBooking", async (req, res) => {
