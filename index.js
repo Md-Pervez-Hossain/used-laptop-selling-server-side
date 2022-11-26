@@ -22,7 +22,7 @@ function verifyJWT(req, res, next) {
     return res.status(401).send("unAuthorised");
   }
   const token = authHeader.split(" ")[1];
-  console.log(token);
+
   jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
     if (err) {
       return res.status(401).send("unAuthorised");
@@ -30,7 +30,6 @@ function verifyJWT(req, res, next) {
     req.decoded = decoded;
     next();
   });
-  console.log("inside verify token", req.headers.authorization);
 }
 
 async function run() {
@@ -61,20 +60,25 @@ async function run() {
     });
 
     //wishlist
-    app.post("/wishlist", async (req, res) => {
+    app.post("/wishlist/:email", async (req, res) => {
       const wishlist = req.body;
+      console.log(wishlist);
       const result = await wishListCollection.insertOne(wishlist);
       res.send(result);
     });
     app.get("/wishlist/:email", async (req, res) => {
       const email = req.params.email;
+      // const decodedEmail = req.decoded.email;
+      // if (decodedEmail !== email) {
+      //   return res.status(403).send("Forbidden");
+      // }
       const query = { email: email };
       const result = await wishListCollection.find(query).toArray();
       res.send(result);
     });
 
     //getBuyer and seller
-    app.get("/mybuyers/:role", async (req, res) => {
+    app.get("/mybuyers/:role", verifyJWT, async (req, res) => {
       const role = req.params.role;
       console.log(role);
       const query = { role: role };
@@ -104,6 +108,21 @@ async function run() {
       const result = await advertisementCollection.find(query).toArray();
       res.send(result);
     });
+    // app.get("/advertisement/:email", async (req, res) => {
+    //   const email = req.params.email;
+    //   const query = { email: email };
+    //   const result = await advertisementCollection.find(query).toArray();
+    //   res.send(result);
+    // });
+    app.delete("/advertisement/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = {
+        advertiseProductId: id,
+      };
+      const result = await advertisementCollection.deleteOne(query);
+      res.send(result);
+    });
     //add products api
     app.post("/addproducts", async (req, res) => {
       const products = req.body;
@@ -128,19 +147,22 @@ async function run() {
     });
     //after order cancle change product booked status
     app.put("/productupdate/:id", async (req, res) => {
-      const filter = { _id: ObjectId(id) };
-      const options = { upsert: true };
-      const updatedProduct = {
-        $set: {
-          booked: false,
-        },
-      };
-      const result = await productsCollection.updateOne(
-        filter,
-        updatedProduct,
-        options
-      );
-      res.send(result);
+      const id = req.params.id;
+      console.log(id);
+      const filter = { bookingId: id };
+      console.log(filter);
+      // const options = { upsert: true };
+      // const updatedProduct = {
+      //   $set: {
+      //     booked: false,
+      //   },
+      // };
+      // const result = await productsCollection.updateOne(
+      //   filter,
+      //   updatedProduct,
+      //   options
+      // );
+      // res.send(result);
     });
 
     app.get("/addproducts", async (req, res) => {
@@ -161,8 +183,12 @@ async function run() {
       res.send(result);
     });
     //seller own product
-    app.get("/myproduct/:email", async (req, res) => {
+    app.get("/myproduct/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
+      const decodedEmail = req.decoded.email;
+      if (decodedEmail !== email) {
+        return res.status(403).send("Forbidden");
+      }
       const query = { email: email };
       const myProduct = await productsCollection.find(query).toArray();
       res.send(myProduct);
