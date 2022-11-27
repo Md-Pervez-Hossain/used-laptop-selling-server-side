@@ -5,6 +5,7 @@ const cors = require("cors");
 const port = process.env.PORT || 5000;
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_KEY);
 app.use(cors());
 app.use(express.json());
 
@@ -43,9 +44,24 @@ async function run() {
       .db("usedLaptop")
       .collection("advertisement");
     const wishListCollection = client.db("usedLaptop").collection("wishlist");
+    const singleBookCollection = client
+      .db("usedLaptop")
+      .collection("singleBooking");
 
+    app.post("/create-payment-intent", async (req, res) => {
+      const booking = req.body;
+      const price = booking.price;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
     // jwt token
-
     app.get("/jwt", async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
@@ -66,12 +82,12 @@ async function run() {
       const result = await wishListCollection.insertOne(wishlist);
       res.send(result);
     });
-    app.get("/wishlist/:email", async (req, res) => {
+    app.get("/wishlist/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      // const decodedEmail = req.decoded.email;
-      // if (decodedEmail !== email) {
-      //   return res.status(403).send("Forbidden");
-      // }
+      const decodedEmail = req.decoded.email;
+      if (decodedEmail !== email) {
+        return res.status(403).send("Forbidden");
+      }
       const query = { email: email };
       const result = await wishListCollection.find(query).toArray();
       res.send(result);
@@ -151,18 +167,18 @@ async function run() {
       console.log(id);
       const filter = { bookingId: id };
       console.log(filter);
-      // const options = { upsert: true };
-      // const updatedProduct = {
-      //   $set: {
-      //     booked: false,
-      //   },
-      // };
-      // const result = await productsCollection.updateOne(
-      //   filter,
-      //   updatedProduct,
-      //   options
-      // );
-      // res.send(result);
+      const options = { upsert: true };
+      const updatedProduct = {
+        $set: {
+          booked: false,
+        },
+      };
+      const result = await productsCollection.updateOne(
+        filter,
+        updatedProduct,
+        options
+      );
+      res.send(result);
     });
 
     app.get("/addproducts", async (req, res) => {
@@ -251,6 +267,38 @@ async function run() {
       const query = { email: email };
       const myBooking = await buyerBookingCollection.find(query).toArray();
       res.send(myBooking);
+    });
+    app.get("/buyer-booking/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await buyerBookingCollection.findOne(query);
+      console.log(result);
+      res.send(result);
+    });
+    app.get("/buyer-booking", async (req, res) => {
+      const query = {};
+      const result = await buyerBookingCollection.find(query).toArray();
+      res.send(result);
+    });
+    // app.get("/buyerBooking/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   console.log(id);
+    //   const query = { _id: ObjectId(id) };
+    //   const result = await buyerBookingCollection.findOne(query);
+    //   res.send(result);
+    // });
+    // app.get("/buyerBooking/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   console.log(id);
+    //   const query = { _id: ObjectId(id) };
+    //   const booking = await buyerBookingCollection.findOne(query);
+    //   res.send(booking);
+    // });
+
+    app.post("/singleBooking", async (req, res) => {
+      const Book = req.bodyconst;
+      const singleBook = await singleBookCollection.insertOne(Book);
+      res.send(singleBook);
     });
     //delete booking
     app.delete("/mybooking/:id", async (req, res) => {
