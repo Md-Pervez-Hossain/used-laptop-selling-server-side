@@ -47,11 +47,32 @@ async function run() {
     const singleBookCollection = client
       .db("usedLaptop")
       .collection("singleBooking");
+    const paymentsCollection = client.db("usedLaptop").collection("payments");
+
+    app.post("/payments", async (req, res) => {
+      const payments = req.body;
+      const result = await paymentsCollection.insertOne(payments);
+      const id = payments.bookingId;
+      console.log(id);
+      const filter = { _id: ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          paid: true,
+          transtionId: payments.transTionId,
+        },
+      };
+      const updateResult = await buyerBookingCollection.updateOne(
+        filter,
+        updatedDoc
+      );
+      res.send(result);
+    });
 
     app.post("/create-payment-intent", async (req, res) => {
       const booking = req.body;
       const price = booking.price;
-      const amount = price * 100;
+      console.log(price);
+      const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
@@ -124,12 +145,12 @@ async function run() {
       const result = await advertisementCollection.find(query).toArray();
       res.send(result);
     });
-    // app.get("/advertisement/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { email: email };
-    //   const result = await advertisementCollection.find(query).toArray();
-    //   res.send(result);
-    // });
+    app.get("/advertisement/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await advertisementCollection.find(query).toArray();
+      res.send(result);
+    });
     app.delete("/advertisement/:id", async (req, res) => {
       const id = req.params.id;
       console.log(id);
@@ -223,6 +244,7 @@ async function run() {
       const user = await usersCollection.find(query).toArray();
       res.send(user);
     });
+
     app.get("/users/:status", async (req, res) => {
       const status = req.params.status;
       const query = { status: status };
