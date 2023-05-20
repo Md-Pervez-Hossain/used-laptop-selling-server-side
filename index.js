@@ -243,11 +243,21 @@ async function run() {
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
-      const user = await usersCollection.find(query).toArray();
+      const user = await usersCollection.findOne(query);
       res.send(user);
     });
-
-    app.get("/users/:status", async (req, res) => {
+    app.get("/users", async (req, res) => {
+      const query = {};
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/user/:role", async (req, res) => {
+      const role = req.params.role;
+      const query = { role: role };
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/userss/:status", async (req, res) => {
       const status = req.params.status;
       const query = { status: status };
       const user = await usersCollection.find(query).toArray();
@@ -258,7 +268,6 @@ async function run() {
       const result = await usersCollection.insertOne(users);
       res.send(result);
     });
-
     app.put("/users/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
