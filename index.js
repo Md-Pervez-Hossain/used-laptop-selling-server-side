@@ -251,7 +251,7 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
-    app.get("/user/:role", async (req, res) => {
+    app.get("/users/role/:role", async (req, res) => {
       const role = req.params.role;
       const query = { role: role };
       const result = await usersCollection.find(query).toArray();
