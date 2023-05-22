@@ -91,7 +91,7 @@ async function run() {
       console.log(user);
       if (user) {
         const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-          expiresIn: "10h",
+          expiresIn: "365d",
         });
         return res.send({ accessToken: token });
       }
@@ -147,6 +147,12 @@ async function run() {
       const result = await advertisementCollection.find(query).toArray();
       res.send(result);
     });
+    app.get("/advertisement/singleProduct/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await advertisementCollection.findOne(query);
+      res.send(result);
+    });
     app.get("/advertisement/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -170,11 +176,12 @@ async function run() {
     });
     app.put("/addproducts/:id", async (req, res) => {
       const id = req.params.id;
-      const filter = { _id: ObjectId(id) };
+      const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updatedProduct = {
         $set: {
           booked: true,
+          advertisement: true,
         },
       };
       const result = await productsCollection.updateOne(
@@ -184,6 +191,7 @@ async function run() {
       );
       res.send(result);
     });
+
     //after order cancle change product booked status
     app.put("/productupdate/:id", async (req, res) => {
       const id = req.params.id;
@@ -217,7 +225,7 @@ async function run() {
     });
     app.get("/addproduct/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
+      const query = { _id: new ObjectId(id) };
       const result = await productsCollection.findOne(query);
       res.send(result);
     });
@@ -235,12 +243,18 @@ async function run() {
     // seller product delete
     app.delete("/deleteMyProduct/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
+      const query = { _id: new ObjectId(id) };
       const deleteMyProduct = await productsCollection.deleteOne(query);
       res.send(deleteMyProduct);
     });
     //users api
     app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      res.send(user);
+    });
+    app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
