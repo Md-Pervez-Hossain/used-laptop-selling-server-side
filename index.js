@@ -65,6 +65,18 @@ async function run() {
         filter,
         updatedDoc
       );
+      res.send({ result, updateResult });
+    });
+
+    app.get("/payment/successfull", async (req, res) => {
+      const query = {};
+      const result = await paymentsCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/payments/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await paymentsCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -304,13 +316,13 @@ async function run() {
       const booking = await buyerBookingCollection.insertOne(buyerBooking);
       res.send(booking);
     });
-    app.get("/buyerBooking/:email", verifyJWT, async (req, res) => {
+    app.get("/buyerBooking/:email", async (req, res) => {
       const email = req.params.email;
       console.log(email);
-      const decodedEmail = req.decoded.email;
-      if (decodedEmail !== email) {
-        return res.status(403).send("Forbidden");
-      }
+      // const decodedEmail = req.decoded.email;
+      // if (decodedEmail !== email) {
+      //   return res.status(403).send("Forbidden");
+      // }
       const query = { email: email };
       const myBooking = await buyerBookingCollection.find(query).toArray();
       res.send(myBooking);
