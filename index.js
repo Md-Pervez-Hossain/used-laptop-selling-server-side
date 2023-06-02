@@ -48,7 +48,7 @@ async function run() {
       .db("usedLaptop")
       .collection("singleBooking");
     const paymentsCollection = client.db("usedLaptop").collection("payments");
-
+    const laptopBlogs = client.db("usedLaptop").collection("laptopBlogs");
     app.post("/payments", async (req, res) => {
       const payments = req.body;
       const result = await paymentsCollection.insertOne(payments);
@@ -109,6 +109,26 @@ async function run() {
       }
       res.status(401).send("unAuthorised");
     });
+
+    //laptop blog start
+    app.post("/laptopBlog", async (req, res) => {
+      const blog = req.body;
+      const cursor = await laptopBlogs.insertOne(blog);
+      res.send(cursor);
+    });
+    app.get("/laptopBlog", async (req, res) => {
+      const query = {};
+      const result = await laptopBlogs.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/laptopBlog/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await laptopBlogs.findOne(query);
+      res.send(result);
+    });
+
+    //laptop blog end
 
     //wishlist
     app.post("/wishlist/:email", async (req, res) => {
